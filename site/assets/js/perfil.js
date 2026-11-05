@@ -148,8 +148,8 @@ $("form-excluir").addEventListener("submit", async function (e) {
 });
 
 /* ---------- quem está aqui? ----------
-   Desenha na hora com o que já sabemos deste aparelho ("guardado") e confirma com o Firebase
-   ("firebase"). O telefone vem da cópia local e só depois é conferido no servidor, sem travar. */
+   Desenha na hora com o que já sabemos deste aparelho ("guardado") e confirma com o Supabase
+   ("servidor"). O telefone vem da cópia local e só depois é conferido no servidor, sem travar. */
 var editado = false;      // a pessoa já mexeu nos campos: não sobrescrevemos o que ela digitou
 var buscouServidor = {};
 ["p-nome", "p-telefone"].forEach(function (id) {
@@ -158,8 +158,8 @@ var buscouServidor = {};
 
 aoMudarUsuario(function (user, origem) {
   if (!user) {
-    // só o Firebase decide se não há login de verdade; o "palpite" vazio é ignorado
-    if (origem === "firebase" && !document.documentElement.dataset.saindo) location.replace("contato.html#entrar");
+    // só o servidor decide se não há login de verdade; o "palpite" vazio é ignorado
+    if (origem === "servidor" && !document.documentElement.dataset.saindo) location.replace("contato.html#entrar");
     return;
   }
   usuario = user;
@@ -174,7 +174,7 @@ aoMudarUsuario(function (user, origem) {
   carregando.hidden = true;
   wrap.hidden = false;
 
-  if (origem === "firebase" && !buscouServidor[user.uid]) {
+  if (origem === "servidor" && !buscouServidor[user.uid]) {
     buscouServidor[user.uid] = true;
     carregarPerfilExtra(user.uid).then(function (extra) {
       if (!editado && usuario && usuario.uid === user.uid && extra && extra.telefone) {

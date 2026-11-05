@@ -1,72 +1,50 @@
 /* ===================================================================
-   AUTH.JS — login, cadastro e perfil (Firebase Authentication)
+   AUTH.JS — login, cadastro e perfil (Supabase Auth)
 
    O site é HTML puro, sem servidor próprio. Para ter conta de usuário de
-   verdade (e-mail + senha, Google, Facebook) usamos o Firebase, que cuida
-   de guardar senha com segurança e de falar com Google/Facebook.
+   verdade (e-mail + senha, Google, Facebook) usamos o Supabase, que cuida
+   de guardar a senha com segurança e de falar com Google/Facebook.
 
-   Este arquivo é o único que conversa com o Firebase. As páginas só
+   Este arquivo é o único que conversa com o Supabase. As páginas só
    importam as funções daqui:  import { entrarEmail, sair } from "./auth.js"
 
    Dados do perfil:
-     - nome, e-mail e foto ficam na própria conta do Firebase;
-     - telefone fica no Firestore, em usuarios/{uid}, e também numa cópia
-       local (localStorage) para aparecer na hora.
+     - nome, e-mail e foto ficam na própria conta (Supabase Auth);
+     - telefone fica na tabela "profiles" (uma linha por pessoa, criada
+       sozinha pelo banco no cadastro) e também numa cópia local
+       (localStorage) para aparecer na hora.
 
-   Velocidade (o que este arquivo faz para as páginas abrirem rápido):
-     1. começa a baixar o Firebase assim que a página abre;
-     2. guarda uma "foto" do último usuário (nome, e-mail, foto) e mostra
-        a tela de logado NA HORA, enquanto o Firebase confirma por trás;
-     3. o Firestore (pesado) só é carregado quando precisa, e nenhuma tela
-        espera por ele: o telefone aparece da cópia local e é atualizado
-        em seguida, se houver novidade.
+   Velocidade:
+     1. começa a baixar o Supabase assim que a página abre;
+     2. guarda uma "foto" do último usuário (nome, e-mail, foto) e mostra a
+        tela de logado NA HORA, enquanto o Supabase confirma por trás;
+     3. nenhuma tela espera pelo banco: o telefone aparece da cópia local e
+        é atualizado em seguida, se houver novidade.
    =================================================================== */
 
-import { firebaseConfig } from "./firebase-config.js";
+import { supabaseConfig } from "./supabase-config.js";
 
-const V = "10.14.1";
-const CDN = "https://www.gstatic.com/firebasejs/" + V + "/";
+// Versão fixa da biblioteca (evita que uma atualização inesperada quebre o site).
+const SDK = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm";
 
 export const configurado =
-  !!firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("COLE_AQUI") === -1;
+  !!supabaseConfig.url && !!supabaseConfig.key &&
+  supabaseConfig.url.indexOf("COLE_AQUI") === -1 &&
+  supabaseConfig.key.indexOf("COLE_AQUI") === -1;
 
-let A = null;          // módulo firebase-auth
-let FS = null;         // módulo firebase-firestore (só se precisar)
-let appInst = null;
-let auth = null;
-let db = null;
-let promAuth = null;
-let promDb = null;
+let promSb = null;
+let atual = null;        // usuário atual, já no formato que as telas usam
 
-/* ---------- carregamento do Firebase ---------- */
-function iniciarAuth() {
+/* ---------- carregamento do Supabase ---------- */
+function iniciar() {
   if (!configurado) return Promise.reject(new Error("nao-configurado"));
-  if (!promAuth) {
-    promAuth = Promise.all([import(CDN + "firebase-app.js"), import(CDN + "firebase-auth.js")])
-      .then(function (m) {
-        appInst = m[0].initializeApp(firebaseConfig);
-        A = m[1];
-        auth = A.getAuth(appInst);
-        auth.languageCode = "pt-BR";
-        return A;
-      });
-  }
-  return promAuth;
-}
-
-function iniciarDb() {
-  if (!promDb) {
-    promDb = Promise.all([iniciarAuth(), import(CDN + "firebase-firestore.js")]).then(function (m) {
-      FS = m[1];
-      db = FS.getFirestore(appInst);
-      return FS;
+  if (!promSb) {
+    promSb = import(SDK).then(function (m) {
+      return m.createClient(supabaseConfig.url, supabaseConfig.key);
     });
   }
-  return promDb;
+  return promSb;
 }
-
-// começa a baixar já, em paralelo com o resto da página
-if (configurado) iniciarAuth().catch(function () {});
 
 function comTempo(promessa, ms) {
   return new Promise(function (resolve, reject) {
@@ -75,43 +53,72 @@ function comTempo(promessa, ms) {
   });
 }
 
-/* Espera o Firebase terminar de ler a sessão salva e devolve o usuário atual. */
+function urlDaPagina(arquivo) {
+  return new URL(arquivo, location.href).href;
+}
+
+/* ---------- usuário no formato das telas ----------
+   As páginas já usam { uid, displayName, email, photoURL, providerData: [{ providerId }] }.
+   Aqui traduzimos o usuário do Supabase para esse formato. */
+var PROVEDORES = { email: "password", google: "google.com", facebook: "facebook.com" };
+
+function adaptar(u) {
+  if (!u) return null;
+  var md = u.user_metadata || {};
+  var lista = (u.app_metadata && u.app_metadata.providers) ||
+    (u.identities || []).map(function (i) { return i.provider; });
+  return {
+    uid: u.id,
+    displayName: md.nome || md.full_name || md.name || null,
+    email: u.email || null,
+    photoURL: md.avatar_url || md.picture || null,
+    providerData: lista.map(function (p) { return { providerId: PROVEDORES[p] || p }; })
+  };
+}
+
+/* Espera o Supabase terminar de ler a sessão salva e devolve o cliente e o usuário. */
 async function pronto() {
-  const m = await iniciarAuth();
-  await auth.authStateReady();
-  return { m: m, user: auth.currentUser };
+  const c = await iniciar();
+  const r = await c.auth.getSession();
+  const s = r.data && r.data.session;
+  if (!s) throw { code: "session_not_found" };
+  return { c: c, user: adaptar(s.user) };
 }
 
 /* ---------- mensagens de erro em português ---------- */
 var ERROS = {
-  "auth/invalid-credential": "E-mail ou senha incorretos.",
-  "auth/wrong-password": "E-mail ou senha incorretos.",
-  "auth/user-not-found": "E-mail ou senha incorretos.",
-  "auth/invalid-email": "Esse e-mail não parece válido.",
-  "auth/email-already-in-use": "Já existe uma conta com esse e-mail. Tente entrar.",
-  "auth/weak-password": "A senha precisa ter pelo menos 6 caracteres.",
-  "auth/missing-password": "Digite a sua senha.",
-  "auth/too-many-requests": "Muitas tentativas. Aguarde um pouco e tente de novo.",
-  "auth/network-request-failed": "Sem conexão com a internet. Tente de novo.",
-  "auth/popup-closed-by-user": "A janela de login foi fechada antes de terminar.",
-  "auth/cancelled-popup-request": "A janela de login foi fechada antes de terminar.",
-  "auth/popup-blocked": "O navegador bloqueou a janela de login. Libere pop-ups para este site.",
-  "auth/account-exists-with-different-credential":
-    "Já existe uma conta com esse e-mail usando outro método. Entre pelo método original.",
-  "auth/operation-not-allowed": "Esse método de login ainda não foi ativado no Firebase.",
-  "auth/unauthorized-domain": "Este endereço não está autorizado no Firebase (veja o LEIA-ME-LOGIN).",
-  "auth/requires-recent-login": "Por segurança, confirme a sua identidade e tente de novo.",
-  "auth/user-disabled": "Esta conta foi desativada."
+  invalid_credentials: "E-mail ou senha incorretos.",
+  email_not_confirmed: "Confirme o seu e-mail primeiro: enviamos um link para a sua caixa de entrada.",
+  user_already_exists: "Já existe uma conta com esse e-mail. Tente entrar.",
+  email_exists: "Já existe uma conta com esse e-mail. Tente entrar.",
+  weak_password: "A senha precisa ter pelo menos 6 caracteres.",
+  validation_failed: "Esse e-mail não parece válido.",
+  email_address_invalid: "Esse e-mail não parece válido.",
+  over_request_rate_limit: "Muitas tentativas. Aguarde um pouco e tente de novo.",
+  over_email_send_rate_limit: "Muitos e-mails enviados em pouco tempo. Aguarde um pouco e tente de novo.",
+  same_password: "A nova senha precisa ser diferente da atual.",
+  provider_disabled: "Esse método de login ainda não foi ativado no Supabase (veja o LEIA-ME-SUPABASE).",
+  signup_disabled: "Novos cadastros estão desativados no momento.",
+  user_banned: "Esta conta foi desativada.",
+  session_not_found: "Sua sessão expirou. Entre de novo.",
+  "nao-configurado": "O login ainda não foi configurado. Confira site/assets/js/supabase-config.js.",
+  "senha-atual-incorreta": "A senha atual está incorreta.",
+  "falha-excluir": "Não foi possível excluir a conta agora. Tente de novo em instantes.",
+  rede: "Sem conexão com a internet. Tente de novo."
 };
 
 export function traduzirErro(e) {
-  var code = e && e.code;
-  return ERROS[code] || "Não deu certo. Tente de novo em instantes.";
+  var code = e && (e.code || e.error_code);
+  if (ERROS[code]) return ERROS[code];
+  var msg = (e && e.message) || "";
+  if ((e && e.name === "AuthRetryableFetchError") || /failed to fetch|network|load failed/i.test(msg)) return ERROS.rede;
+  if (e && e.status === 429) return ERROS.over_request_rate_limit;
+  return "Não deu certo. Tente de novo em instantes.";
 }
 
 /* ---------- "foto" do último usuário (só para desenhar a tela rápido) ----------
    Guarda apenas nome, e-mail e foto. Não dá acesso a nada: tudo o que mexe na conta
-   continua passando pelo Firebase, que confirma a sessão de verdade em seguida. */
+   continua passando pelo Supabase, que confirma a sessão de verdade em seguida. */
 var CHAVE_USUARIO = "auth:ultimo";
 
 function guardarUsuario(user) {
@@ -141,31 +148,22 @@ function lerUsuarioGuardado() {
 /* ---------- estado do usuário ----------
    callback(user, origem)
      origem "guardado": palpite imediato (vem da "foto" salva neste aparelho);
-     origem "firebase": resposta confirmada pelo Firebase.
-   Quem usa deve tratar "guardado" só como aparência; ações importantes esperam "firebase". */
-var ouvintes = [];
-var criando = false;      // durante o cadastro, esperamos o nome ser gravado antes de avisar a tela
-
-function notificar() {
-  var user = auth ? auth.currentUser : null;
-  guardarUsuario(user);
-  ouvintes.forEach(function (f) { f(user, "firebase"); });
-}
-
+     origem "servidor": resposta confirmada pelo Supabase.
+   Quem usa deve tratar "guardado" só como aparência; ações importantes esperam "servidor". */
 export function aoMudarUsuario(callback) {
-  if (!configurado) { callback(null, "firebase"); return; }
-  ouvintes.push(callback);
+  if (!configurado) { callback(null, "servidor", { code: "nao-configurado" }); return; }
   callback(lerUsuarioGuardado(), "guardado");     // aparece na hora
-  iniciarAuth().then(function (m) {
-    m.onAuthStateChanged(auth, function (user) {
-      if (criando) return;
-      guardarUsuario(user);
-      callback(user, "firebase");
+  iniciar().then(function (c) {
+    c.auth.onAuthStateChange(function (evento, sessao) {
+      atual = adaptar(sessao && sessao.user);
+      guardarUsuario(atual);
+      // setTimeout: o Supabase pede que não se chame o banco de dentro deste aviso
+      setTimeout(function () { callback(atual, "servidor"); }, 0);
     });
-  }).catch(function () { callback(null, "firebase"); });
+  }).catch(function (e) { callback(null, "servidor", e); });
 }
 
-export function usuarioAtual() { return auth ? auth.currentUser : null; }
+export function usuarioAtual() { return atual; }
 
 export function provedores(user) {
   return (user && user.providerData ? user.providerData : []).map(function (p) { return p.providerId; });
@@ -178,46 +176,58 @@ export function primeiroNome(user) {
 
 /* ---------- entrar / criar conta ---------- */
 export async function entrarEmail(email, senha) {
-  const m = await iniciarAuth();
-  return m.signInWithEmailAndPassword(auth, email, senha);
+  const c = await iniciar();
+  const r = await c.auth.signInWithPassword({ email: email, password: senha });
+  if (r.error) throw r.error;
 }
 
+/* Devolve { precisaConfirmar }: se o projeto exige confirmar o e-mail, a pessoa só entra
+   depois de clicar no link que o Supabase envia. */
 export async function criarConta(nome, email, senha) {
-  const m = await iniciarAuth();
-  criando = true;
-  try {
-    const cred = await m.createUserWithEmailAndPassword(auth, email, senha);
-    await m.updateProfile(cred.user, { displayName: nome });
-    return cred;
-  } finally {
-    criando = false;
-    notificar();           // agora a tela já recebe o nome certo, sem piscar o e-mail
+  const c = await iniciar();
+  const r = await c.auth.signUp({
+    email: email,
+    password: senha,
+    options: { data: { nome: nome }, emailRedirectTo: urlDaPagina("contato.html") }
+  });
+  if (r.error) throw r.error;
+  // com a confirmação de e-mail ligada, um e-mail já cadastrado volta "sem identidades"
+  if (r.data.user && r.data.user.identities && r.data.user.identities.length === 0) {
+    throw { code: "user_already_exists" };
   }
+  return { precisaConfirmar: !r.data.session };
 }
 
-export async function entrarGoogle() {
-  const m = await iniciarAuth();
-  const p = new m.GoogleAuthProvider();
-  p.setCustomParameters({ prompt: "select_account" });
-  return m.signInWithPopup(auth, p);
+async function entrarProvedor(provedor, extra) {
+  const c = await iniciar();
+  const opcoes = { redirectTo: location.origin + location.pathname };
+  if (extra) opcoes.queryParams = extra;
+  const r = await c.auth.signInWithOAuth({ provider: provedor, options: opcoes });
+  if (r.error) throw r.error;       // se der certo, o navegador segue para o Google/Facebook
 }
 
-export async function entrarFacebook() {
-  const m = await iniciarAuth();
-  const p = new m.FacebookAuthProvider();
-  p.addScope("email");
-  return m.signInWithPopup(auth, p);
-}
+export function entrarGoogle() { return entrarProvedor("google", { prompt: "select_account" }); }
+export function entrarFacebook() { return entrarProvedor("facebook"); }
 
 export async function recuperarSenha(email) {
-  const m = await iniciarAuth();
-  return m.sendPasswordResetEmail(auth, email);
+  const c = await iniciar();
+  const r = await c.auth.resetPasswordForEmail(email, { redirectTo: urlDaPagina("redefinir.html") });
+  if (r.error) throw r.error;
+}
+
+/* Usada pela página redefinir.html, depois que a pessoa clica no link do e-mail. */
+export async function definirNovaSenha(novaSenha) {
+  const p = await pronto();
+  const r = await p.c.auth.updateUser({ password: novaSenha });
+  if (r.error) throw r.error;
 }
 
 export async function sair() {
-  const m = await iniciarAuth();
+  const c = await iniciar();
   guardarUsuario(null);
-  return m.signOut(auth);
+  atual = null;
+  const r = await c.auth.signOut();
+  if (r.error) throw r.error;
 }
 
 /* ---------- perfil (telefone) ---------- */
@@ -232,71 +242,69 @@ function guardarLocal(uid, dados) {
   try { localStorage.setItem(chaveLocal(uid), JSON.stringify(Object.assign(perfilExtraLocal(uid), dados))); } catch (e) {}
 }
 
-/* Versão do servidor (Firestore). Nunca trava a tela: tem limite de tempo e cai na cópia local. */
+/* Versão do servidor (tabela profiles). Nunca trava a tela: tem limite de tempo e cai na cópia local. */
 export async function carregarPerfilExtra(uid) {
   try {
-    const fs = await comTempo(iniciarDb(), 6000);
-    const snap = await comTempo(fs.getDoc(fs.doc(db, "usuarios", uid)), 4000);
-    if (snap.exists()) {
-      var d = snap.data();
+    const c = await comTempo(iniciar(), 6000);
+    const r = await comTempo(c.from("profiles").select("telefone").eq("id", uid).maybeSingle(), 4000);
+    if (r.data) {
+      var d = { telefone: r.data.telefone || "" };
       guardarLocal(uid, d);
       return d;
     }
-  } catch (e) { /* Firestore desligado ou lento: segue com o que já temos aqui */ }
+  } catch (e) { /* banco lento ou fora do ar: segue com o que já temos aqui */ }
   return perfilExtraLocal(uid);
 }
 
 export async function salvarPerfilExtra(uid, dados) {
   guardarLocal(uid, dados);                    // na hora, no aparelho
   try {
-    const fs = await comTempo(iniciarDb(), 6000);
-    await comTempo(fs.setDoc(fs.doc(db, "usuarios", uid), dados, { merge: true }), 8000);
+    const c = await comTempo(iniciar(), 6000);
+    await comTempo(c.from("profiles").upsert(Object.assign({ id: uid }, dados)), 8000);
   } catch (e) { /* fica pelo menos no aparelho */ }
 }
 
 export async function atualizarPerfil(nome, telefone) {
   const p = await pronto();
-  const user = p.user;
+  var user = p.user;
   if (nome !== undefined && nome !== user.displayName) {
-    await p.m.updateProfile(user, { displayName: nome });
-    notificar();
+    const r = await p.c.auth.updateUser({ data: { nome: nome } });
+    if (r.error) throw r.error;
+    user = adaptar(r.data.user);
+    atual = user;
+    guardarUsuario(user);
+    try { await comTempo(p.c.from("profiles").upsert({ id: user.uid, nome: nome }), 6000); } catch (e) {}
   }
   if (telefone !== undefined) await salvarPerfilExtra(user.uid, { telefone: telefone });
   return user;
 }
 
-/* Confirma a identidade de novo (o Firebase exige isso para trocar senha e excluir conta). */
+/* Confirma a identidade de novo (para trocar a senha e excluir a conta).
+   Quem entrou por Google/Facebook já foi confirmado pelo próprio provedor. */
 export async function reautenticar(senhaAtual) {
   const p = await pronto();
-  const m = p.m, user = p.user;
-  const provs = provedores(user);
-  if (provs.indexOf("password") !== -1) {
-    const cred = m.EmailAuthProvider.credential(user.email, senhaAtual || "");
-    return m.reauthenticateWithCredential(user, cred);
-  }
-  if (provs.indexOf("google.com") !== -1) {
-    return m.reauthenticateWithPopup(user, new m.GoogleAuthProvider());
-  }
-  if (provs.indexOf("facebook.com") !== -1) {
-    return m.reauthenticateWithPopup(user, new m.FacebookAuthProvider());
+  if (provedores(p.user).indexOf("password") !== -1) {
+    const r = await p.c.auth.signInWithPassword({ email: p.user.email, password: senhaAtual || "" });
+    if (r.error) throw { code: "senha-atual-incorreta" };
   }
 }
 
 export async function trocarSenha(senhaAtual, novaSenha) {
   await reautenticar(senhaAtual);
   const p = await pronto();
-  return p.m.updatePassword(p.user, novaSenha);
+  const r = await p.c.auth.updateUser({ password: novaSenha });
+  if (r.error) throw r.error;
 }
 
+/* Quem apaga o usuário é a função "excluir-conta" do Supabase (precisa de poder de
+   administrador, que o navegador não tem). O perfil some junto, em cascata. */
 export async function excluirConta(senhaAtual) {
   await reautenticar(senhaAtual);
   const p = await pronto();
-  const user = p.user;
-  try {
-    const fs = await comTempo(iniciarDb(), 6000);
-    await comTempo(fs.deleteDoc(fs.doc(db, "usuarios", user.uid)), 6000);
-  } catch (e) {}
-  try { localStorage.removeItem(chaveLocal(user.uid)); } catch (e) {}
+  const r = await p.c.functions.invoke("excluir-conta", { method: "POST" });
+  if (r.error) throw { code: "falha-excluir" };
+  try { localStorage.removeItem(chaveLocal(p.user.uid)); } catch (e) {}
   guardarUsuario(null);
-  return p.m.deleteUser(user);
+  atual = null;
+  try { await p.c.auth.signOut({ scope: "local" }); } catch (e) {}
 }

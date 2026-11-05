@@ -61,19 +61,17 @@ perfil / Sair), e **clicar na logo leva para a Home**. Depois de entrar,
 a pessoa cai direto na tela de orçamento.
 
 **Carregamento rápido:** o site guarda neste aparelho só o nome, e-mail e
-foto do último usuário para desenhar a tela na hora, e o Firebase confirma
+foto do último usuário para desenhar a tela na hora, e o Supabase confirma
 a sessão por trás. O telefone vem de uma cópia local e só depois é
 conferido no servidor, sem travar a tela. As linhas `modulepreload` no
-`<head>` das páginas adiantam o download do Firebase; se você não for usar
-o login, pode apagá-las.
+`<head>` das páginas adiantam o download do Supabase.
 
-### Importante: o login precisa do Firebase e de um endereço http
+### Importante: o login precisa do Supabase e de um endereço http
 
 O login de verdade (guardar senha com segurança, falar com Google e
-Facebook) precisa de um serviço por trás. Usamos o **Firebase
-Authentication**, que é gratuito para esse uso. Siga o passo a passo do
-arquivo **`LEIA-ME-LOGIN.md`** e cole as chaves em
-`site/assets/js/firebase-config.js`. Enquanto isso não for feito, a
+Facebook) usa o **Supabase Auth**. Siga o passo a passo do arquivo
+**`LEIA-ME-SUPABASE.md`** e confira o endereço e a chave pública em
+`site/assets/js/supabase-config.js`. Enquanto isso não for feito, a
 página de login mostra um aviso de que ainda não foi configurada.
 
 Também por causa do login, o site **não funciona abrindo o arquivo com
@@ -98,4 +96,6 @@ Para trocar o número de WhatsApp, edite `NUMERO_WHATSAPP` em
 - `site/assets/img/portfolio/` — fotos dos projetos.
 - `site/assets/img/hero.jpg`, `hero-mobile.jpg`, `guarda_roupa.png` — as
   imagens fixas do site.
-- Contas dos clientes: ficam no Firebase, não neste projeto.
+- Contas dos clientes: ficam no Supabase Auth, não neste projeto. As contas
+  antigas do Firebase não foram migradas; os clientes precisarão criar uma
+  conta nova.

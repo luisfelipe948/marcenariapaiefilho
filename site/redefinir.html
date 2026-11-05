@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Marcenaria Pai &amp; Filho — Nova senha</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fawxefpurvrserofcyub.supabase.co" crossorigin>
+<link rel="modulepreload" href="assets/js/supabase-config.js">
+<link rel="modulepreload" href="assets/js/auth.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/contato.css">
+<link rel="stylesheet" href="assets/css/auth.css">
+</head>
+<body>
+
+<header class="contato-header">
+  <div class="wrap">
+    <nav class="nav">
+      <a class="nav__logo" href="index.html" aria-label="Marcenaria Pai &amp; Filho — voltar para a Home">MARCENARIA PAI &amp; FILHO<span>MÓVEIS SOB MEDIDA</span></a>
+      <ul class="nav__links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="portfolio.html">Portfólio</a></li>
+        <li><a href="contato.html">Orçamento</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" style="max-width: 520px; margin: 56px auto 80px;">
+  <section class="auth estado">
+    <h2>Escolha uma senha nova</h2>
+
+    <p class="carregando estado" id="estado-carregando">Verificando o link…</p>
+
+    <div class="aviso aviso--erro" id="estado-invalido" role="alert" hidden>
+      Este link venceu ou já foi usado. Volte em <a href="contato.html">Entrar</a>, toque em “Esqueci minha senha” e peça outro.
+    </div>
+
+    <div class="aviso aviso--erro" id="aviso-erro" role="alert" hidden></div>
+    <div class="aviso aviso--ok" id="aviso-ok" role="status" hidden></div>
+
+    <form id="form-senha" novalidate hidden>
+      <div class="linha">
+        <div class="campo" data-campo="nova">
+          <label for="nova-senha">Senha nova *</label>
+          <input type="password" id="nova-senha" autocomplete="new-password" required>
+          <span class="msg-erro">A senha precisa ter pelo menos 6 caracteres.</span>
+        </div>
+      </div>
+      <div class="linha">
+        <div class="campo" data-campo="repetir">
+          <label for="repetir-senha">Repita a senha *</label>
+          <input type="password" id="repetir-senha" autocomplete="new-password" required>
+          <span class="msg-erro">As duas senhas precisam ser iguais.</span>
+        </div>
+      </div>
+      <button type="submit" class="btn btn--primary" id="btn-salvar" style="width:100%;">Salvar senha</button>
+    </form>
+
+    <p style="margin-top: 18px;"><a class="btn btn--ghost" id="link-continuar" href="contato.html" hidden>Continuar para o orçamento</a></p>
+  </section>
+</main>
+
+<script type="module" src="assets/js/redefinir.js"></script>
+</body>
+</html>

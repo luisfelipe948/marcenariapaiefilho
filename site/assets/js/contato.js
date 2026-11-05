@@ -112,10 +112,17 @@ formAuth.addEventListener("submit", function (e) {
   if (!validarAuth()) return;
   var email = $("auth-email").value.trim();
   var senha = $("auth-senha").value;
-  executar(function () {
-    return modo === "criar"
-      ? criarConta($("auth-nome").value.trim(), email, senha)
-      : entrarEmail(email, senha);
+  executar(async function () {
+    if (modo === "criar") {
+      var r = await criarConta($("auth-nome").value.trim(), email, senha);
+      // se o projeto exige confirmar o e-mail, a pessoa só entra depois de clicar no link
+      if (r && r.precisaConfirmar) {
+        trocarAba("entrar");
+        avisar(avisoOk, "Quase lá! Enviamos um link de confirmação para o seu e-mail. Clique nele e depois volte aqui para entrar.");
+      }
+    } else {
+      await entrarEmail(email, senha);
+    }
   });
 });
 
@@ -215,8 +222,8 @@ form.addEventListener("submit", function (e) {
   }
 
   var dados = Object.fromEntries(new FormData(form));
-  var link = linkDoWhatsapp(montarMensagem(dados, usuario));
-
+  var mensagem = montarMensagem(dados, usuario);
+  var link = linkDoWhatsapp(mensagem);
   if ($("salvar-telefone").checked) {
     salvarPerfilExtra(usuario.uid, { telefone: dados.telefone.trim() });
   }
@@ -252,7 +259,7 @@ $("btn-sair-form").addEventListener("click", function () { sair(); });
 /* ===================================================================
    3) QUEM ESTÁ NA PÁGINA?
    A tela aparece na hora, com o que já sabemos deste aparelho (origem "guardado"), e é
-   confirmada pelo Firebase em seguida (origem "firebase"). Nada aqui espera pelo Firestore.
+   confirmada pelo Supabase em seguida (origem "servidor"). Nada aqui espera pelo banco.
    =================================================================== */
 var telefoneEditado = false;
 var buscouServidor = {};
@@ -281,14 +288,14 @@ aoMudarUsuario(function (user, origem) {
   if (!estados.confirmacao.classList.contains("ativo")) mostrar("orcamento");
 
   // entrou agora: já cai no orçamento, no topo e com o cursor no primeiro campo vazio
-  if (vinhaDoLogin && origem === "firebase") {
+  if (vinhaDoLogin && origem === "servidor") {
     if (location.hash) history.replaceState(null, "", location.pathname);
     window.scrollTo(0, 0);
     ($("telefone").value ? $("ambiente") : $("telefone")).focus({ preventScroll: true });
   }
 
   // depois, sem travar nada, confere o telefone no servidor
-  if (origem === "firebase" && !buscouServidor[user.uid]) {
+  if (origem === "servidor" && !buscouServidor[user.uid]) {
     buscouServidor[user.uid] = true;
     carregarPerfilExtra(user.uid).then(function (extra) {
       if (usuario && usuario.uid === user.uid && extra && extra.telefone && !$("telefone").value && !telefoneEditado) {
