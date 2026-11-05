@@ -119,31 +119,43 @@
 <script src="assets/js/animacoes.js"></script>
 <script>
   // Mostra até 4 projetos marcados como "destaque" no CMS, se houver algum.
+  // Desenha na hora com o portfolio-data.js e redesenha quando chega o conteúdo do Supabase.
   (function () {
-    var pecas = (window.PORTFOLIO || []).filter(function (p) { return p.destaque; }).slice(0, 4);
-    if (!pecas.length) return;
-    var grid = document.getElementById("grid-preview");
-    pecas.forEach(function (p, i) {
-      var el = document.createElement("div");
-      el.className = "peca";
-      el.style.setProperty("--reveal-delay", (i * 0.1).toFixed(1) + "s");
-      el.setAttribute("data-reveal", "");
-      el.innerHTML =
-        (p.imagem ? '<img class="peca__img" src="' + p.imagem + '" alt="' + p.titulo + '" loading="lazy">' : "") +
-        '<div class="peca__conteudo">' +
-          '<div class="peca__cat">' + p.catNome + '</div>' +
-          '<div class="peca__nome">' + p.titulo + '</div>' +
-        '</div>';
-      grid.appendChild(el);
-    });
-    document.getElementById("portfolio-preview").hidden = false;
-    if (window.ScrollReveal) {
-      document.querySelectorAll("#grid-preview .peca").forEach(function (el, i) {
-        window.ScrollReveal.observe(el, Math.min(i * 0.06, 0.4) + "s");
+    function criar(tag, classe, texto) {
+      var e = document.createElement(tag);
+      if (classe) e.className = classe;
+      if (texto !== undefined) e.textContent = texto;
+      return e;
+    }
+    function desenhar() {
+      var pecas = (window.PORTFOLIO || []).filter(function (p) { return p.destaque; }).slice(0, 4);
+      var grid = document.getElementById("grid-preview");
+      grid.replaceChildren();
+      document.getElementById("portfolio-preview").hidden = !pecas.length;
+      pecas.forEach(function (p, i) {
+        var el = criar("div", "peca");
+        el.style.setProperty("--reveal-delay", (i * 0.1).toFixed(1) + "s");
+        el.setAttribute("data-reveal", "");
+        if (p.imagem) {
+          var foto = criar("img", "peca__img");
+          foto.src = p.imagem;
+          foto.alt = p.titulo;
+          foto.loading = "lazy";
+          el.appendChild(foto);
+        }
+        var conteudo = criar("div", "peca__conteudo");
+        conteudo.appendChild(criar("div", "peca__cat", p.catNome));
+        conteudo.appendChild(criar("div", "peca__nome", p.titulo));
+        el.appendChild(conteudo);
+        grid.appendChild(el);
+        if (window.ScrollReveal) window.ScrollReveal.observe(el, Math.min(i * 0.06, 0.4) + "s");
       });
     }
+    desenhar();
+    window.addEventListener("portfolio-atualizado", desenhar);
   })();
 </script>
 <script type="module" src="assets/js/nav-auth.js"></script>
+<script type="module" src="assets/js/conteudo.js"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@ site, e um site em HTML puro (pasta `site/`) com login de clientes.
 ## 1. O painel (CMS em Python)
 
 ```
-pip install pillow
+pip install -r requirements.txt
 python cms.py
 ```
 
@@ -29,7 +29,8 @@ python cms.py
 
 As cópias do histórico ficam em `historico_imagens/` (fora da pasta do
 site, então nada disso é publicado). Toda alteração no portfólio
-reescreve `site/assets/js/portfolio-data.js` sozinha.
+reescreve `site/assets/js/portfolio-data.js` sozinha **e publica no Supabase**
+(veja a seção 3), então o site no ar muda sem novo deploy.
 
 ### Ligando o envio do código por e-mail (Gmail)
 
@@ -53,6 +54,7 @@ seja digitado em "Esqueci minha senha".
 - `contato.html` — **Login / cadastro** (e-mail e senha, Google, Facebook)
   e, depois de entrar, o **formulário de orçamento**, que abre o WhatsApp
   com a mensagem pronta para **(11) 91053-8560**
+- `redefinir.html` — escolher uma senha nova após pedir a recuperação por e-mail
 - `perfil.html` — **Meu perfil**: editar nome e telefone, trocar senha,
   sair e excluir a conta
 
@@ -64,15 +66,18 @@ a pessoa cai direto na tela de orçamento.
 foto do último usuário para desenhar a tela na hora, e o Supabase confirma
 a sessão por trás. O telefone vem de uma cópia local e só depois é
 conferido no servidor, sem travar a tela. As linhas `modulepreload` no
-`<head>` das páginas adiantam o download do Supabase.
+`<head>` das páginas adiantam o download do Supabase; se você não for usar
+o login, pode apagá-las.
 
 ### Importante: o login precisa do Supabase e de um endereço http
 
 O login de verdade (guardar senha com segurança, falar com Google e
-Facebook) usa o **Supabase Auth**. Siga o passo a passo do arquivo
-**`LEIA-ME-SUPABASE.md`** e confira o endereço e a chave pública em
-`site/assets/js/supabase-config.js`. Enquanto isso não for feito, a
-página de login mostra um aviso de que ainda não foi configurada.
+Facebook) precisa de um serviço por trás. Usamos o **Supabase Auth**, que
+é gratuito para esse uso. Siga o passo a passo do arquivo
+**`LEIA-ME-SUPABASE.md`**. O endereço e a chave pública do projeto ficam em
+`site/assets/js/supabase-config.js` (já preenchidos). Enquanto o login com
+Google/Facebook não for ligado no painel do Supabase, o e-mail e senha já
+funciona.
 
 Também por causa do login, o site **não funciona abrindo o arquivo com
 duplo clique** (`file://`). Para testar no seu computador:
@@ -83,7 +88,7 @@ python -m http.server 8000
 ```
 
 e abra `http://localhost:8000`. Para publicar, qualquer hospedagem de
-sites estáticos serve (Netlify, GitHub Pages, Firebase Hosting...).
+sites estáticos serve (Vercel, Netlify, GitHub Pages...).
 
 Para trocar o número de WhatsApp, edite `NUMERO_WHATSAPP` em
 `site/assets/js/contato.js` (e o link em `site/contato.html`).
@@ -96,6 +101,27 @@ Para trocar o número de WhatsApp, edite `NUMERO_WHATSAPP` em
 - `site/assets/img/portfolio/` — fotos dos projetos.
 - `site/assets/img/hero.jpg`, `hero-mobile.jpg`, `guarda_roupa.png` — as
   imagens fixas do site.
-- Contas dos clientes: ficam no Supabase Auth, não neste projeto. As contas
-  antigas do Firebase não foram migradas; os clientes precisarão criar uma
-  conta nova.
+- Contas dos clientes, telefones e pedidos de orçamento: ficam no Supabase
+  (tabelas `profiles` e `orcamentos`), não neste projeto.
+
+## 3. Sincronização CMS → site (Supabase)
+
+O painel guarda tudo no computador, como sempre. Se o arquivo `.env` estiver
+preenchido, ele também **publica no Supabase, em segundo plano**, a cada
+alteração e uma vez ao abrir:
+
+- as imagens (portfólio e as 3 fixas do site) → bucket `site-images`;
+- a lista de projetos e os endereços das imagens → tabela `site_content`.
+
+O site (`assets/js/conteudo.js`) lê essa tabela ao abrir e se atualiza
+sozinho, **sem `git push` e sem novo deploy**. Na barra do painel aparece
+"Site atualizado às HH:MM" quando deu certo.
+
+Para ligar: copie `.env.exemplo` para `.env`, cole a **secret key** do
+Supabase e rode `pip install -r requirements.txt`. O `.env` nunca vai para o
+GitHub nem para a pasta `site/`. Sem `.env` (ou sem internet) o painel
+funciona normalmente, só que o site no ar não é atualizado.
+
+Os arquivos do site (`site/assets/img` e `portfolio-data.js`) continuam no
+repositório como cópia de segurança: se o Supabase estiver fora do ar, o
+site abre com eles.

@@ -46,6 +46,9 @@ function iniciar() {
   return promSb;
 }
 
+// começa a baixar já, em paralelo com o resto da página
+if (configurado) iniciar().catch(function () {});
+
 function comTempo(promessa, ms) {
   return new Promise(function (resolve, reject) {
     var t = setTimeout(function () { reject(new Error("tempo-esgotado")); }, ms);
@@ -307,4 +310,15 @@ export async function excluirConta(senhaAtual) {
   guardarUsuario(null);
   atual = null;
   try { await p.c.auth.signOut({ scope: "local" }); } catch (e) {}
+}
+
+/* ---------- orçamento ----------
+   O pedido continua indo pelo WhatsApp; esta cópia no banco é só um registro (opcional).
+   Nunca atrapalha o envio: se falhar, devolve false e segue. */
+export async function registrarOrcamento(mensagem) {
+  try {
+    const c = await comTempo(iniciar(), 6000);
+    const r = await comTempo(c.from("orcamentos").insert({ mensagem: String(mensagem).slice(0, 4000) }), 8000);
+    return !r.error;
+  } catch (e) { return false; }
 }

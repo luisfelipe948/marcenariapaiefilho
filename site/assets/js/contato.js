@@ -12,7 +12,8 @@
 
 import {
   configurado, aoMudarUsuario, entrarEmail, criarConta, entrarGoogle, entrarFacebook,
-  recuperarSenha, sair, traduzirErro, carregarPerfilExtra, perfilExtraLocal, salvarPerfilExtra, primeiroNome
+  recuperarSenha, sair, traduzirErro, carregarPerfilExtra, perfilExtraLocal, salvarPerfilExtra, primeiroNome,
+  registrarOrcamento
 } from "./auth.js";
 
 // Número fixo do WhatsApp da marcenaria (com código do país 55).
@@ -224,6 +225,8 @@ form.addEventListener("submit", function (e) {
   var dados = Object.fromEntries(new FormData(form));
   var mensagem = montarMensagem(dados, usuario);
   var link = linkDoWhatsapp(mensagem);
+  registrarOrcamento(mensagem);        // cópia no banco, sem esperar nem atrapalhar o WhatsApp
+
   if ($("salvar-telefone").checked) {
     salvarPerfilExtra(usuario.uid, { telefone: dados.telefone.trim() });
   }

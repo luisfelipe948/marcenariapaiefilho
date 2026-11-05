@@ -5,7 +5,7 @@
      - visitante:  botão "Entrar"
      - logado:     avatar + primeiro nome, com menu (Meu perfil, Sair)
    O estado "logado" aparece na hora (a partir do último usuário guardado
-   neste aparelho) e é confirmado pelo Firebase logo em seguida.
+   neste aparelho) e é confirmado pelo Supabase logo em seguida.
    =================================================================== */
 
 import { aoMudarUsuario, primeiroNome, sair } from "./auth.js";

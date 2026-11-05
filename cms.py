@@ -19,14 +19,16 @@ Em todo lugar que tem imagem o painel mostra a que está NO SITE agora e
 guarda as 5 imagens anteriores, para você voltar para uma delas com um clique.
 
 O site (pasta site/) é HTML puro. Toda vez que o portfólio muda, este
-programa reescreve site/assets/js/portfolio-data.js, que é o que o site lê.
+programa reescreve site/assets/js/portfolio-data.js e, se o arquivo .env estiver
+preenchido, também publica o portfólio e as imagens no Supabase (sync_supabase.py),
+e o site no ar se atualiza sozinho, sem novo deploy.
 
 Visual: mesma paleta do site (site/assets/css/base.css — preto-café,
 nogueira, oliva, cobre, areia), com cantos arredondados e botões suaves.
 As fontes do site (Spoof, Fraunces, Work Sans) são usadas se estiverem
 instaladas; senão o painel cai num fallback parecido.
 
-Dependência: Pillow  ->  pip install pillow
+Dependências:  pip install pillow supabase   (o Supabase é opcional)
 
 Código por e-mail (Gmail) — configuração:
     1. Na conta Google que vai ENVIAR os e-mails, ative a verificação em 2
@@ -56,6 +58,11 @@ from email.message import EmailMessage
 from pathlib import Path
 from tkinter import filedialog, ttk
 from tkinter import font as tkfont
+
+try:
+    import sync_supabase
+except Exception:  # o painel funciona sem a sincronização
+    sync_supabase = None
 
 try:
     from PIL import Image, ImageDraw, ImageOps, ImageTk
@@ -731,6 +738,7 @@ def salvar_imagem_site(chave, caminho_origem, item_historico=None):
         img.convert("RGBA").save(destino, format="PNG", optimize=True)
     else:
         img.convert("RGB").save(destino, format="JPEG", quality=88, optimize=True, progressive=True)
+    sincronizar_site()
 
 
 def gerar_portfolio_js():
@@ -757,6 +765,33 @@ def gerar_portfolio_js():
         "window.PORTFOLIO = " + json.dumps(dados, ensure_ascii=False, indent=2) + ";\n"
     )
     JS_DATA_PATH.write_text(conteudo, encoding="utf-8")
+    sincronizar_site()
+
+
+def coletar_para_sincronizar():
+    """O que o sync_supabase.py precisa para publicar: imagens fixas e projetos."""
+    con = conectar()
+    linhas = con.execute("SELECT * FROM projetos ORDER BY ordem, id").fetchall()
+    con.close()
+    projetos = [{
+        "dados": {
+            "id": p["id"],
+            "titulo": p["titulo"],
+            "descricao": p["descricao"],
+            "cat": slugify(p["categoria"]),
+            "catNome": p["categoria"],
+            "destaque": bool(p["destaque"]),
+        },
+        "arquivo": (PORTFOLIO_IMG_DIR / p["imagem"]) if p["imagem"] else None,
+    } for p in linhas]
+    slots = {chave: s["arquivo"] for chave, s in SLOTS_SITE.items()}
+    return slots, projetos
+
+
+def sincronizar_site():
+    """Publica no Supabase em segundo plano (não faz nada se não estiver configurado)."""
+    if sync_supabase is not None:
+        sync_supabase.agendar(coletar_para_sincronizar)
 
 
 # =====================================================================
@@ -2087,6 +2122,33 @@ class App:
 
         self._abrir_pagina(pagina)
 
+    def _atualizar_sync(self):
+        """Mostra na barra do topo se o site (Supabase) está em dia com o painel."""
+        if getattr(self, "_job_sync", None):
+            try:
+                self.root.after_cancel(self._job_sync)
+            except tk.TclError:
+                pass
+            self._job_sync = None
+        lbl = getattr(self, "lbl_sync", None)
+        try:
+            if lbl is None or not lbl.winfo_exists():
+                return
+            estado = sync_supabase.status["estado"] if sync_supabase is not None else "desligado"
+            if estado == "enviando":
+                texto, cor = "Publicando no site…", TEXTO_SUAVE
+            elif estado == "ok":
+                hora = time.strftime("%H:%M", time.localtime(sync_supabase.status["quando"]))
+                texto, cor = "Site atualizado às " + hora, OLIVA_CLARO
+            elif estado == "erro":
+                texto, cor = "Não publicou no site (veja o terminal)", COBRE
+            else:
+                texto, cor = "Site: só neste computador (sem .env)", TEXTO_SUAVE
+            lbl.configure(text=texto, fg=cor)
+            self._job_sync = self.root.after(1200, self._atualizar_sync)
+        except tk.TclError:
+            pass
+
     def _montar_nav(self, pai):
         nav = tk.Frame(pai, bg=NOGUEIRA)
         nav.pack(fill="x", padx=48, pady=(26, 0))
@@ -2094,6 +2156,10 @@ class App:
 
         Botao(nav, "Sair", self._sair, "ghost", bg=NOGUEIRA, pequeno=True).pack(side="right", padx=(12, 0))
         ChipUsuario(nav, self.cadastro["nome"], self._abrir_conta).pack(side="right")
+
+        self.lbl_sync = tk.Label(nav, text="", bg=NOGUEIRA, fg=TEXTO_SUAVE, font=fonte("corpo", 9))
+        self.lbl_sync.pack(side="right", padx=(0, 18))
+        self._atualizar_sync()
 
         abas = tk.Frame(nav, bg=NOGUEIRA)
         abas.pack(side="right", padx=(0, 22))

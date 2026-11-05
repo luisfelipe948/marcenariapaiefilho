@@ -2,8 +2,9 @@
    PORTFOLIO.JS — filtro por categoria e modal de detalhe da peça
    Usado apenas em portfolio.html
 
-   Os projetos vêm de assets/js/portfolio-data.js, um arquivo que o
-   cms.py regrava toda vez que o portfólio é alterado no painel.
+   Os projetos vêm de assets/js/portfolio-data.js (arquivo que o cms.py regrava
+   a cada alteração) e, por cima, do Supabase (assets/js/conteudo.js), que o CMS
+   atualiza sozinho: assim o site muda sem precisar de novo deploy.
    Formato de cada peça:
      { id, titulo, descricao, cat (slug), catNome, imagem (url ou null), destaque }
    =================================================================== */
@@ -119,4 +120,16 @@
 
   montarFiltros();
   renderizar();
+
+  // Chegou o portfólio do Supabase (publicado pelo CMS): refaz filtros e grade.
+  window.addEventListener("portfolio-atualizado", function () {
+    pecas = window.PORTFOLIO || [];
+    filtros.querySelectorAll(".chip").forEach(function (c) {
+      if (c.dataset.filtro !== "todos") c.remove();
+      else c.classList.add("ativo");
+    });
+    filtroAtual = "todos";
+    montarFiltros();
+    renderizar();
+  });
 })();

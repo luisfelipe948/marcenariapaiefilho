@@ -2,3 +2,4 @@ __pycache__/
 cms.db
 historico_imagens/
 email_config.json
+.env

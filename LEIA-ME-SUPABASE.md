@@ -1,56 +1,94 @@
-# Configurando o login (Supabase)
+# Ligando o login do site (Supabase) — passo a passo
 
-## URL de retorno
+Custo: R$ 0 no plano gratuito. O banco, as tabelas, as regras de segurança,
+o bucket de imagens e a função de excluir conta **já estão criados** no
+projeto `tcc` do Supabase. Falta só ligar o Google/Facebook e conferir as URLs.
 
-No Supabase, abra **Authentication → URL Configuration**:
+Endereço do projeto: `https://fawxefpurvrserofcyub.supabase.co`
+Callback (usada no Google e no Facebook):
+`https://fawxefpurvrserofcyub.supabase.co/auth/v1/callback`
 
-- Configure **Site URL** com o endereço publicado do site.
-- Em **Redirect URLs**, autorize o site publicado (por exemplo,
-  `https://seu-dominio.com/**`) e `http://localhost:8000/**`.
-  O link de redefinição volta para `redefinir.html`.
+## 1. URLs do site (obrigatório)
 
-Sem essa configuração, o link de redefinição pode não retornar ao site.
+Supabase → **Authentication → URL Configuration**:
 
-## E-mail e senha
+- **Site URL:** o endereço do site na Vercel (ex.: `https://seu-projeto.vercel.app`).
+- **Redirect URLs:** adicione, uma por linha:
+  - `https://seu-projeto.vercel.app/**`
+  - `http://localhost:8000/**` (para testar no computador)
 
-Em **Authentication → Sign In / Providers → Email**, mantenha o provedor
-ativado. Com **Confirm email** ligado, a pessoa precisa confirmar o cadastro
-antes de entrar. Para uso real, configure um SMTP próprio em
-**Authentication → SMTP Settings**; o serviço padrão tem limite baixo de envio.
+Sem isso, o login com Google/Facebook e o link de "Esqueci minha senha"
+não voltam para o site.
 
-O template de recuperação de senha do Supabase deve usar o link de recuperação
-padrão (`{{ .ConfirmationURL }}`), que cria a sessão temporária usada pela tela
-`site/redefinir.html`.
+## 2. E-mail e senha
 
-## Login social (opcional)
+Já vem ativo. Dois ajustes úteis em **Authentication → Sign In / Providers → Email**:
 
-Google e Facebook precisam ser ativados em
-**Authentication → Sign In / Providers** e configurados também nos respectivos
-painéis de desenvolvedor. As instruções de callback aparecem no painel Supabase.
-Se não for usar Facebook, remova o botão `btn-facebook` de `site/contato.html`
-e a linha correspondente em `site/assets/js/contato.js`.
+- **Confirm email:** ligado = a pessoa precisa clicar num link enviado por e-mail
+  antes de entrar (o site já mostra esse aviso). Desligue só para testar rápido.
+- Os e-mails padrão do Supabase têm limite baixo de envios por hora. Para uso
+  real, configure um SMTP próprio em **Authentication → SMTP Settings**
+  (Resend, Brevo ou Gmail com senha de app).
 
-## Configuração pública do site
+## 3. Google
 
-O endereço do projeto e a chave **publishable** ficam em
-`site/assets/js/supabase-config.js`. Essa chave é destinada ao navegador;
-**nunca coloque uma secret key nesse arquivo ou no repositório**.
+1. Acesse https://console.cloud.google.com e crie um projeto (ex.: `marcenaria-login`).
+2. **Google Auth Platform** (ou **APIs e serviços → Tela de permissão OAuth**):
+   *Primeiros passos* → nome do app, e-mail de suporte → público **Externo** →
+   e-mail de contato → criar. Depois, em **Público-alvo**, clique em **Publicar app**
+   (senão só e-mails de teste conseguem entrar).
+3. **Clientes → Criar cliente** (ou *Credenciais → ID do cliente OAuth*):
+   - Tipo: **Aplicativo da Web**.
+   - **Origens JavaScript autorizadas:** o endereço do site na Vercel e `http://localhost:8000`.
+   - **URIs de redirecionamento autorizados:** só a callback do Supabase (acima).
+4. Copie o **Client ID** e o **Client Secret**.
+5. Supabase → **Authentication → Sign In / Providers → Google**: ative, cole os dois e salve.
 
-As demais telas também usam a tabela `profiles` para o telefone do perfil e a
-função `excluir-conta` para excluir usuários. Confira se esses recursos e as
-políticas de acesso estão configurados no projeto Supabase.
+## 4. Facebook (só se for usar)
 
-As contas existentes no Firebase não são transferidas automaticamente. Quem
-já tinha conta precisará criar uma conta no Supabase.
+1. https://developers.facebook.com → **Meus apps → Criar app** (tipo "Consumidor" ou "Login do Facebook").
+2. **Configurações → Básico:** copie **ID do app** e **Chave secreta**.
+3. Supabase → **Providers → Facebook**: ative e cole os dois. Copie a callback mostrada.
+4. No app do Facebook: **Facebook Login → Configurações →** cole a callback em
+   **URIs de redirecionamento OAuth válidos**.
+5. Para pessoas comuns entrarem, o app precisa estar em modo **Ativo (Live)**
+   (pede uma Política de Privacidade publicada). Se não for usar Facebook, remova
+   o botão `btn-facebook` do `contato.html` e a linha dele no `contato.js`.
 
-## Teste local
+## 5. CMS (publicar o site sem deploy)
 
-Na raiz do repositório:
+1. Supabase → **Project Settings → API Keys** → copie a **Secret key** (`sb_secret_...`).
+2. Na pasta do `cms.py`: copie `.env.exemplo` para `.env` e cole a chave.
+3. `pip install -r requirements.txt` e `python cms.py`.
+4. Na barra do painel deve aparecer "Site atualizado às HH:MM".
 
-```powershell
+A secret key dá poder total sobre o banco: nunca coloque no site, no GitHub ou em prints.
+
+## 6. Vercel
+
+Settings → General → **Root Directory:** `site` (só o nome da pasta).
+A cada `git push` na `main` a Vercel publica. Mudanças feitas pelo CMS
+(textos do portfólio e imagens) **não precisam** de push.
+
+## 7. Testar
+
+```
 cd site
 python -m http.server 8000
 ```
 
-Abra `http://localhost:8000/contato.html`, peça a redefinição, acesse o link
-recebido por e-mail e salve uma senha nova em `redefinir.html`.
+Abra http://localhost:8000/contato.html: crie uma conta, mande um orçamento de
+teste, abra **Meu perfil**, edite nome e telefone, troque a senha, saia, entre
+de novo, teste "Esqueci minha senha" e, por fim, **Excluir perfil**.
+
+## O que mudou em relação ao Firebase
+
+- Login: `assets/js/auth.js` agora fala com o Supabase (as páginas continuam
+  usando as mesmas funções).
+- Telefone do perfil: tabela `profiles` (antes Firestore).
+- Excluir conta: função `excluir-conta` do Supabase (precisa de poder de admin).
+- Google/Facebook abrem por redirecionamento (a pessoa volta para a mesma página),
+  em vez de janela pop-up.
+- Contas criadas no Firebase não foram migradas: quem já se cadastrou lá cria a
+  conta de novo (no Google, basta clicar em "Entrar com Google").
+- Pode apagar o projeto do Firebase quando quiser; nada aqui depende mais dele.
