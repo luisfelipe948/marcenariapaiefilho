@@ -2,7 +2,7 @@
    CONTATO.JS — login/cadastro e envio do orçamento pelo WhatsApp
 
    Fluxo da página:
-     1. visitante  -> vê "Entrar / Criar conta" (e-mail e senha, Google, Facebook)
+     1. visitante  -> vê "Entrar / Criar conta" (e-mail e senha ou Google)
      2. logado     -> vê o formulário de orçamento (nome e e-mail vêm da conta)
      3. enviou     -> mensagem de confirmação
 
@@ -11,7 +11,7 @@
    =================================================================== */
 
 import {
-  configurado, aoMudarUsuario, entrarEmail, criarConta, entrarGoogle, entrarFacebook,
+  configurado, aoMudarUsuario, entrarEmail, criarConta, entrarGoogle,
   recuperarSenha, sair, traduzirErro, carregarPerfilExtra, perfilExtraLocal, salvarPerfilExtra, primeiroNome,
   registrarOrcamento
 } from "./auth.js";
@@ -92,7 +92,7 @@ function validarAuth() {
 }
 
 function ocupado(v) {
-  [btnAuth, $("btn-google"), $("btn-facebook")].forEach(function (b) { b.disabled = v; });
+  [btnAuth, $("btn-google")].forEach(function (b) { b.disabled = v; });
 }
 
 async function executar(acao) {
@@ -135,7 +135,6 @@ formAuth.querySelectorAll("input").forEach(function (i) {
 });
 
 $("btn-google").addEventListener("click", function () { executar(entrarGoogle); });
-$("btn-facebook").addEventListener("click", function () { executar(entrarFacebook); });
 
 $("btn-esqueci").addEventListener("click", function () {
   var email = $("auth-email").value.trim();

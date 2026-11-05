@@ -210,8 +210,6 @@ async function entrarProvedor(provedor, extra) {
 }
 
 export function entrarGoogle() { return entrarProvedor("google", { prompt: "select_account" }); }
-export function entrarFacebook() { return entrarProvedor("facebook"); }
-
 export async function recuperarSenha(email) {
   const c = await iniciar();
   const r = await c.auth.resetPasswordForEmail(email, { redirectTo: urlDaPagina("redefinir.html") });
