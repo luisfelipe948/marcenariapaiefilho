@@ -203,3 +203,24 @@ form { width: 100%; max-width: 520px; }
   font-size: 0.95rem;
 }
 .campo-erro-geral[hidden] { display: none; }
+
+/* ===================================================================
+   RESPONSIVO — tablet e celular
+   =================================================================== */
+
+/* sem largura própria, o bloco encolhia ao tamanho do conteúdo no celular */
+#form-wrap { width: 100%; max-width: 520px; }
+
+@media (max-width: 880px) {
+  .contato-header { padding-block: 1.2rem; }
+  .lateral { padding: 2rem clamp(1.25rem, 5vw, 2.5rem); gap: 1.5rem; }
+  .lateral__corpo { padding-block: 1rem; }
+  .lateral__corpo h1 { max-width: none; }
+  .lateral__corpo p { max-width: none; font-size: 1rem; }
+  .lateral__lista { margin-top: 1.6rem; }
+}
+@media (max-width: 520px) {
+  .form-topo { margin-bottom: 1.6rem; }
+  .confirmacao { padding: 1.5rem 0; }
+  .confirmacao .btn { width: 100%; }
+}

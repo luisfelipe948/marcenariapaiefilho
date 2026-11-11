@@ -33,17 +33,45 @@ export const configurado =
   supabaseConfig.key.indexOf("COLE_AQUI") === -1;
 
 let promSb = null;
+let promNormal = null;
 let atual = null;        // usuário atual, já no formato que as telas usam
+
+/* A página redefinir.html marca <html data-recuperacao>. Nela, o link do e-mail abre uma sessão
+   TEMPORÁRIA do Supabase só para trocar a senha. Essa sessão fica guardada à parte (sessionStorage,
+   com outro nome), para o resto do site NÃO enxergar a pessoa como logada antes de ela escolher a
+   senha nova. Só depois de salvar a senha é que entramos de verdade (ver definirNovaSenha). */
+const MODO_RECUPERACAO =
+  typeof document !== "undefined" && document.documentElement.hasAttribute("data-recuperacao");
+
+function opcoesDoCliente() {
+  if (!MODO_RECUPERACAO) return undefined;
+  var auth = { storageKey: "sb-recuperacao", autoRefreshToken: false };
+  try { auth.storage = window.sessionStorage; } catch (e) { auth.persistSession = false; }
+  return { auth: auth };
+}
 
 /* ---------- carregamento do Supabase ---------- */
 function iniciar() {
   if (!configurado) return Promise.reject(new Error("nao-configurado"));
   if (!promSb) {
     promSb = import(SDK).then(function (m) {
-      return m.createClient(supabaseConfig.url, supabaseConfig.key);
+      return m.createClient(supabaseConfig.url, supabaseConfig.key, opcoesDoCliente());
     });
   }
   return promSb;
+}
+
+/* Cliente do login de verdade (o que guarda a sessão no aparelho). Fora da página de
+   redefinição é o mesmo de sempre; lá, é um segundo cliente que NÃO lê o link do e-mail. */
+function iniciarNormal() {
+  if (!MODO_RECUPERACAO) return iniciar();
+  if (!configurado) return Promise.reject(new Error("nao-configurado"));
+  if (!promNormal) {
+    promNormal = import(SDK).then(function (m) {
+      return m.createClient(supabaseConfig.url, supabaseConfig.key, { auth: { detectSessionInUrl: false } });
+    });
+  }
+  return promNormal;
 }
 
 // começa a baixar já, em paralelo com o resto da página
@@ -104,7 +132,6 @@ var ERROS = {
   signup_disabled: "Novos cadastros estão desativados no momento.",
   user_banned: "Esta conta foi desativada.",
   session_not_found: "Sua sessão expirou. Entre de novo.",
-  "nao-configurado": "O login ainda não foi configurado. Confira site/assets/js/supabase-config.js.",
   "senha-atual-incorreta": "A senha atual está incorreta.",
   "falha-excluir": "Não foi possível excluir a conta agora. Tente de novo em instantes.",
   rede: "Sem conexão com a internet. Tente de novo."
@@ -154,16 +181,16 @@ function lerUsuarioGuardado() {
      origem "servidor": resposta confirmada pelo Supabase.
    Quem usa deve tratar "guardado" só como aparência; ações importantes esperam "servidor". */
 export function aoMudarUsuario(callback) {
-  if (!configurado) { callback(null, "servidor", { code: "nao-configurado" }); return; }
-  callback(lerUsuarioGuardado(), "guardado");     // aparece na hora
+  if (!configurado) { callback(null, "servidor"); return; }
+  callback(MODO_RECUPERACAO ? null : lerUsuarioGuardado(), "guardado");     // aparece na hora
   iniciar().then(function (c) {
     c.auth.onAuthStateChange(function (evento, sessao) {
       atual = adaptar(sessao && sessao.user);
-      guardarUsuario(atual);
+      if (!MODO_RECUPERACAO) guardarUsuario(atual);   // a sessão temporária da redefinição não conta como login
       // setTimeout: o Supabase pede que não se chame o banco de dentro deste aviso
       setTimeout(function () { callback(atual, "servidor"); }, 0);
     });
-  }).catch(function (e) { callback(null, "servidor", e); });
+  }).catch(function () { callback(null, "servidor"); });
 }
 
 export function usuarioAtual() { return atual; }
@@ -210,17 +237,41 @@ async function entrarProvedor(provedor, extra) {
 }
 
 export function entrarGoogle() { return entrarProvedor("google", { prompt: "select_account" }); }
+export function entrarFacebook() { return entrarProvedor("facebook"); }
+
 export async function recuperarSenha(email) {
   const c = await iniciar();
   const r = await c.auth.resetPasswordForEmail(email, { redirectTo: urlDaPagina("redefinir.html") });
   if (r.error) throw r.error;
 }
 
-/* Usada pela página redefinir.html, depois que a pessoa clica no link do e-mail. */
+/* Usada pela página redefinir.html, depois que a pessoa clica no link do e-mail.
+   1) troca a senha usando a sessão temporária do link;
+   2) encerra essa sessão temporária;
+   3) só então entra de verdade com a senha nova.
+   Devolve { logado }: false se a senha foi trocada mas a entrada automática falhou
+   (nesse caso a página manda a pessoa para a tela de "Entrar"). */
 export async function definirNovaSenha(novaSenha) {
-  const p = await pronto();
-  const r = await p.c.auth.updateUser({ password: novaSenha });
+  const c = await iniciar();
+  const s = await c.auth.getSession();
+  const sessao = s.data && s.data.session;
+  if (!sessao) throw { code: "session_not_found" };
+  const email = sessao.user && sessao.user.email;
+
+  const r = await c.auth.updateUser({ password: novaSenha });
   if (r.error) throw r.error;
+
+  try { await c.auth.signOut({ scope: "local" }); } catch (e) { /* a sessão temporária some sozinha */ }
+
+  try {
+    const normal = await iniciarNormal();
+    const l = await normal.auth.signInWithPassword({ email: email, password: novaSenha });
+    if (l.error) return { logado: false };
+    guardarUsuario(adaptar(l.data.user));
+    return { logado: true };
+  } catch (e) {
+    return { logado: false };
+  }
 }
 
 export async function sair() {

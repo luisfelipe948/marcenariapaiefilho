@@ -51,10 +51,9 @@ seja digitado em "Esqueci minha senha".
 
 - `index.html` — Home
 - `portfolio.html` — Portfólio com filtro por categoria
-- `contato.html` — **Login / cadastro** (e-mail e senha ou Google)
+- `contato.html` — **Login / cadastro** (e-mail e senha, Google, Facebook)
   e, depois de entrar, o **formulário de orçamento**, que abre o WhatsApp
   com a mensagem pronta para **(11) 91053-8560**
-- `redefinir.html` — escolher uma senha nova após pedir a recuperação por e-mail
 - `perfil.html` — **Meu perfil**: editar nome e telefone, trocar senha,
   sair e excluir a conta
 
@@ -71,12 +70,13 @@ o login, pode apagá-las.
 
 ### Importante: o login precisa do Supabase e de um endereço http
 
-O login de verdade (guardar senha com segurança, falar com Google)
-precisa de um serviço por trás. Usamos o **Supabase Auth**, que
+O login de verdade (guardar senha com segurança, falar com Google e
+Facebook) precisa de um serviço por trás. Usamos o **Supabase Auth**, que
 é gratuito para esse uso. Siga o passo a passo do arquivo
 **`LEIA-ME-SUPABASE.md`**. O endereço e a chave pública do projeto ficam em
 `site/assets/js/supabase-config.js` (já preenchidos). Enquanto o login com
-Google não for ligado no painel do Supabase, o e-mail e senha já funciona.
+Google/Facebook não for ligado no painel do Supabase, o e-mail e senha já
+funciona.
 
 Também por causa do login, o site **não funciona abrindo o arquivo com
 duplo clique** (`file://`). Para testar no seu computador:

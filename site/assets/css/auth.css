@@ -328,3 +328,33 @@ a.nav__logo { display: block; text-decoration: none; color: var(--creme); cursor
 @media (max-width: 880px) {
   .perfil-coluna { padding-top: 2rem; }
 }
+
+/* ===================================================================
+   RESPONSIVO — celular (orçamento, perfil e menu da conta)
+   =================================================================== */
+@media (max-width: 880px) {
+  .form-coluna { padding-top: 1.6rem; }
+}
+@media (max-width: 700px) {
+  .nav__direita { gap: 0.6rem; }
+  .conta__entrar { padding: 0.5rem 0.9rem; font-size: 0.8rem; }
+  .conta__menu { min-width: 180px; max-width: calc(100vw - 2.5rem); }
+
+  .form-coluna,
+  .perfil-coluna { padding-inline: 1.25rem; padding-bottom: 2.5rem; }
+  .auth h2,
+  .perfil-topo h2 { font-size: 1.6rem; }
+  .auth__sub { margin-bottom: 1.4rem; }
+  .auth-aba { font-size: 0.82rem; letter-spacing: 0.04em; }
+
+  .logado { flex-wrap: wrap; }
+  .logado__txt { flex: 1 1 140px; }
+
+  .perfil-cartao { padding: 1.2rem; }
+  .perfil-acoes .btn,
+  .perfil-cartao form .btn { width: 100%; }
+
+  .modal { max-height: calc(100vh - 1.5rem); max-height: calc(100dvh - 1.5rem); }
+  .modal__corpo { padding: 1.3rem; }
+  .modal__acoes .btn { flex: 1 1 100%; }
+}

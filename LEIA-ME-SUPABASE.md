@@ -2,10 +2,10 @@
 
 Custo: R$ 0 no plano gratuito. O banco, as tabelas, as regras de segurança,
 o bucket de imagens e a função de excluir conta **já estão criados** no
-projeto `tcc` do Supabase. Falta só ligar o Google e conferir as URLs.
+projeto `tcc` do Supabase. Falta só ligar o Google/Facebook e conferir as URLs.
 
 Endereço do projeto: `https://fawxefpurvrserofcyub.supabase.co`
-Callback (usada pelo Google):
+Callback (usada no Google e no Facebook):
 `https://fawxefpurvrserofcyub.supabase.co/auth/v1/callback`
 
 ## 1. URLs do site (obrigatório)
@@ -17,7 +17,7 @@ Supabase → **Authentication → URL Configuration**:
   - `https://seu-projeto.vercel.app/**`
   - `http://localhost:8000/**` (para testar no computador)
 
-Sem isso, o login com Google e o link de "Esqueci minha senha"
+Sem isso, o login com Google/Facebook e o link de "Esqueci minha senha"
 não voltam para o site.
 
 ## 2. E-mail e senha
@@ -44,7 +44,18 @@ Já vem ativo. Dois ajustes úteis em **Authentication → Sign In / Providers �
 4. Copie o **Client ID** e o **Client Secret**.
 5. Supabase → **Authentication → Sign In / Providers → Google**: ative, cole os dois e salve.
 
-## 4. CMS (publicar o site sem deploy)
+## 4. Facebook (só se for usar)
+
+1. https://developers.facebook.com → **Meus apps → Criar app** (tipo "Consumidor" ou "Login do Facebook").
+2. **Configurações → Básico:** copie **ID do app** e **Chave secreta**.
+3. Supabase → **Providers → Facebook**: ative e cole os dois. Copie a callback mostrada.
+4. No app do Facebook: **Facebook Login → Configurações →** cole a callback em
+   **URIs de redirecionamento OAuth válidos**.
+5. Para pessoas comuns entrarem, o app precisa estar em modo **Ativo (Live)**
+   (pede uma Política de Privacidade publicada). Se não for usar Facebook, remova
+   o botão `btn-facebook` do `contato.html` e a linha dele no `contato.js`.
+
+## 5. CMS (publicar o site sem deploy)
 
 1. Supabase → **Project Settings → API Keys** → copie a **Secret key** (`sb_secret_...`).
 2. Na pasta do `cms.py`: copie `.env.exemplo` para `.env` e cole a chave.
@@ -53,13 +64,13 @@ Já vem ativo. Dois ajustes úteis em **Authentication → Sign In / Providers �
 
 A secret key dá poder total sobre o banco: nunca coloque no site, no GitHub ou em prints.
 
-## 5. Vercel
+## 6. Vercel
 
 Settings → General → **Root Directory:** `site` (só o nome da pasta).
 A cada `git push` na `main` a Vercel publica. Mudanças feitas pelo CMS
 (textos do portfólio e imagens) **não precisam** de push.
 
-## 6. Testar
+## 7. Testar
 
 ```
 cd site
@@ -76,7 +87,7 @@ de novo, teste "Esqueci minha senha" e, por fim, **Excluir perfil**.
   usando as mesmas funções).
 - Telefone do perfil: tabela `profiles` (antes Firestore).
 - Excluir conta: função `excluir-conta` do Supabase (precisa de poder de admin).
-- Google abre por redirecionamento (a pessoa volta para a mesma página),
+- Google/Facebook abrem por redirecionamento (a pessoa volta para a mesma página),
   em vez de janela pop-up.
 - Contas criadas no Firebase não foram migradas: quem já se cadastrou lá cria a
   conta de novo (no Google, basta clicar em "Entrar com Google").

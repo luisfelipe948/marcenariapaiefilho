@@ -1,0 +1,150 @@
+/* ===================================================================
+   SIMPLES.CSS — páginas de uma coluna: privacidade.html e redefinir.html
+   Topo de largura total (o topo de duas colunas do orçamento não serve
+   aqui), conteúdo centralizado e rodapé sempre no fim da tela.
+   =================================================================== */
+
+.pagina-simples {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+.pagina-simples > main { flex: 1; }
+
+.topo-simples {
+  position: relative;
+  z-index: 30;
+  background: var(--nogueira);
+  border-bottom: 1px solid var(--linha);
+  padding-block: 1.4rem;
+}
+
+/* ---------- política de privacidade ---------- */
+.legal {
+  width: min(760px, 100% - 2.5rem);
+  margin: clamp(2rem, 6vw, 4rem) auto clamp(3rem, 8vw, 5rem);
+  line-height: 1.75;
+  counter-reset: secao;
+}
+.legal__topo { margin-bottom: 2rem; }
+.legal__topo h1 {
+  font-family: var(--font-spoof);
+  font-size: clamp(2rem, 6.5vw, 3rem);
+  line-height: 1.1;
+}
+.legal__data {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+.legal__intro { margin-top: 1.4rem; font-size: 1.08rem; color: var(--texto); }
+
+.legal__resumo {
+  margin: 2rem 0 0.5rem;
+  padding: 1.2rem 1.4rem;
+  background: var(--nogueira);
+  border: 1px solid var(--linha);
+  border-left: 3px solid var(--cobre);
+  border-radius: 6px;
+}
+.legal__resumo h2 { font-size: 1.05rem; margin: 0 0 0.6rem; font-family: "Work Sans", system-ui, sans-serif; }
+.legal__resumo ul { margin: 0; }
+
+.legal section { margin-top: 2.2rem; }
+.legal section h2 {
+  counter-increment: secao;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--linha);
+  font-size: clamp(1.2rem, 4vw, 1.4rem);
+}
+.legal section h2::before {
+  content: counter(secao, decimal-leading-zero);
+  font-family: "Fraunces", serif;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--cobre);
+  letter-spacing: 0.06em;
+}
+.legal p { margin-top: 0.8rem; color: var(--texto-suave); }
+.legal ul { margin: 0.6rem 0 0; padding-left: 1.3rem; color: var(--texto-suave); }
+.legal li { margin-top: 0.55rem; padding-left: 0.2rem; }
+.legal li::marker { color: var(--cobre); }
+.legal strong { color: var(--areia); font-weight: 600; }
+.legal a {
+  color: var(--areia);
+  text-decoration-color: var(--cobre);
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.legal a:hover { color: var(--creme); }
+
+/* ---------- redefinir senha ---------- */
+.redefinir {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: clamp(2rem, 7vw, 4.5rem) 1.25rem clamp(3rem, 8vw, 5rem);
+}
+.cartao-simples {
+  width: 100%;
+  max-width: 480px;
+  padding: clamp(1.4rem, 5vw, 2.4rem);
+  background: var(--nogueira);
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+}
+.cartao-simples h1 {
+  font-family: var(--font-spoof);
+  font-size: clamp(1.6rem, 6vw, 2.1rem);
+}
+.cartao-simples .sub { margin: 0.6rem 0 1.6rem; color: var(--texto-suave); font-size: 1.02rem; }
+.cartao-simples form { max-width: none; }
+.cartao-simples .campo input { background: var(--preto-cafe); }
+.cartao-simples .btn { border-radius: 6px; width: 100%; }
+.cartao-simples .aviso a { color: inherit; }
+
+.campo-senha { position: relative; }
+.campo-senha input { padding-right: 5.6rem; }
+.ver-senha {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  transform: translateY(-50%);
+  padding: 0.5rem 0.7rem;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--areia);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ver-senha:hover { background: rgba(232, 220, 200, 0.09); }
+
+.estado-centro { text-align: center; padding: 0.5rem 0; }
+.estado-centro .confirmacao__icone { margin-bottom: 1rem; }
+.estado-centro p { color: var(--texto-suave); }
+.estado-centro .btn { margin-top: 1.2rem; }
+
+.girando {
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 0.9rem;
+  border: 3px solid var(--linha);
+  border-top-color: var(--cobre);
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .girando { animation: none; } }

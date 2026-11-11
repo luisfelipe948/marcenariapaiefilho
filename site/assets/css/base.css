@@ -49,6 +49,8 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -188,8 +190,62 @@ a {
   text-decoration-color: var(--texto);
   text-underline-offset: 4px;
 }
+
+/* botão do menu (só aparece no celular; criado por js/menu-mobile.js) */
+.nav { position: relative; }
+.nav__logo { min-width: 0; }
+.nav__toggle {
+  display: none;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid rgba(232, 220, 200, 0.3);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.nav__toggle span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--areia);
+  border-radius: 2px;
+  transition: transform 0.2s, opacity 0.2s;
+}
 @media (max-width: 700px) {
-  .nav__links { display: none; }
+  .nav__toggle { display: inline-flex; }
+  .nav__links {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.8rem);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.4rem;
+    background: var(--nogueira);
+    border: 1px solid var(--linha);
+    border-radius: 8px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+    z-index: 60;
+  }
+  .nav--aberto .nav__links { display: flex; }
+  .nav__links a {
+    display: block;
+    padding: 0.85rem 1rem;
+    border-radius: 5px;
+    font-size: 1.05rem;
+    opacity: 1;
+  }
+  .nav__links a:hover { background: rgba(232, 220, 200, 0.09); }
+  .nav__links a.ativo { text-decoration: none; background: rgba(232, 220, 200, 0.07); }
+  .nav--aberto .nav__toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav--aberto .nav__toggle span:nth-child(2) { opacity: 0; }
+  .nav--aberto .nav__toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 }
 
 /* ---------- footer ---------- */
@@ -217,6 +273,11 @@ a {
 }
 .footer__links a:hover {
   color: var(--areia);
+}
+@media (max-width: 700px) {
+  .footer .wrap { flex-direction: column; gap: 0.9rem; }
+  .footer__links { flex-wrap: wrap; gap: 0.6rem 1.4rem; }
+  .footer__links a { display: inline-block; padding-block: 0.25rem; }   /* alvo de toque maior */
 }
 
 /* ---------- foto de um projeto dentro do card .peca ----------
@@ -253,4 +314,21 @@ a {
     transform: none;
     transition: none;
   }
+}
+
+/* ---------- celular: ajustes gerais ---------- */
+@media (max-width: 700px) {
+  body { font-size: 1rem; }
+  .wrap { width: calc(100% - 2.5rem); }
+  .nav { gap: 0.8rem; }
+  .nav__logo { font-size: 1rem; letter-spacing: 0.03em; line-height: 1.2; }
+  .nav__logo span { font-size: 0.58rem; letter-spacing: 0.2em; margin-top: 0.25rem; }
+  .eyebrow { font-size: 0.74rem; letter-spacing: 0.18em; margin-bottom: 1rem; }
+  .eyebrow::before { width: 24px; }
+  .btn { padding: 0.9rem 1.4rem; font-size: 0.9rem; }
+}
+
+/* hover só onde existe mouse (no celular o efeito "gruda" depois do toque) */
+@media (hover: none) {
+  .peca:hover { transform: none; }
 }

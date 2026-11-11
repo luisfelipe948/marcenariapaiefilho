@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-recuperacao>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1A130B">
 <meta name="robots" content="noindex">
 <title>Marcenaria Pai &amp; Filho — Nova senha</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -13,10 +14,11 @@
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/contato.css">
 <link rel="stylesheet" href="assets/css/auth.css">
+<link rel="stylesheet" href="assets/css/simples.css">
 </head>
-<body>
+<body class="pagina-simples">
 
-<header class="contato-header">
+<header class="topo-simples">
   <div class="wrap">
     <nav class="nav">
       <a class="nav__logo" href="index.html" aria-label="Marcenaria Pai &amp; Filho — voltar para a Home">MARCENARIA PAI &amp; FILHO<span>MÓVEIS SOB MEDIDA</span></a>
@@ -29,41 +31,76 @@
   </div>
 </header>
 
-<main class="wrap" style="max-width: 520px; margin: 56px auto 80px;">
-  <section class="auth estado">
-    <h2>Escolha uma senha nova</h2>
+<main class="redefinir">
+  <section class="cartao-simples">
+    <span class="eyebrow">Redefinir senha</span>
+    <h1>Escolha uma senha nova</h1>
+    <p class="sub" id="subtitulo">Depois de salvar, você já entra na sua conta.</p>
 
-    <p class="carregando estado" id="estado-carregando">Verificando o link…</p>
+    <!-- 1) verificando o link -->
+    <div class="estado-centro" id="estado-carregando">
+      <span class="girando" aria-hidden="true"></span>
+      <p>Verificando o link…</p>
+    </div>
 
-    <div class="aviso aviso--erro" id="estado-invalido" role="alert" hidden>
-      Este link venceu ou já foi usado. Volte em <a href="contato.html">Entrar</a>, toque em “Esqueci minha senha” e peça outro.
+    <!-- 2) link vencido ou já usado -->
+    <div id="estado-invalido" hidden>
+      <div class="aviso aviso--erro" role="alert">
+        Este link venceu ou já foi usado. Peça outro: na tela de entrada, toque em “Esqueci minha senha”.
+      </div>
+      <a class="btn btn--primary" href="contato.html#entrar">Ir para a tela de entrada</a>
     </div>
 
     <div class="aviso aviso--erro" id="aviso-erro" role="alert" hidden></div>
-    <div class="aviso aviso--ok" id="aviso-ok" role="status" hidden></div>
 
+    <!-- 3) escolher a senha -->
     <form id="form-senha" novalidate hidden>
       <div class="linha">
         <div class="campo" data-campo="nova">
           <label for="nova-senha">Senha nova *</label>
-          <input type="password" id="nova-senha" autocomplete="new-password" required>
+          <div class="campo-senha">
+            <input type="password" id="nova-senha" autocomplete="new-password" minlength="6" required>
+            <button type="button" class="ver-senha" data-ver-senha="nova-senha" aria-pressed="false">Mostrar</button>
+          </div>
+          <small>Use pelo menos 6 caracteres.</small>
           <span class="msg-erro">A senha precisa ter pelo menos 6 caracteres.</span>
         </div>
       </div>
       <div class="linha">
         <div class="campo" data-campo="repetir">
           <label for="repetir-senha">Repita a senha *</label>
-          <input type="password" id="repetir-senha" autocomplete="new-password" required>
+          <div class="campo-senha">
+            <input type="password" id="repetir-senha" autocomplete="new-password" required>
+            <button type="button" class="ver-senha" data-ver-senha="repetir-senha" aria-pressed="false">Mostrar</button>
+          </div>
           <span class="msg-erro">As duas senhas precisam ser iguais.</span>
         </div>
       </div>
-      <button type="submit" class="btn btn--primary" id="btn-salvar" style="width:100%;">Salvar senha</button>
+      <button type="submit" class="btn btn--primary" id="btn-salvar">Salvar senha e entrar</button>
     </form>
 
-    <p style="margin-top: 18px;"><a class="btn btn--ghost" id="link-continuar" href="contato.html" hidden>Continuar para o orçamento</a></p>
+    <!-- 4) pronto -->
+    <div class="estado-centro" id="estado-sucesso" hidden role="status">
+      <div class="confirmacao__icone">✓</div>
+      <p id="texto-sucesso"></p>
+      <a class="btn btn--ghost" id="link-continuar" href="contato.html">Continuar</a>
+    </div>
   </section>
 </main>
 
+<footer class="footer">
+  <div class="wrap">
+    <span>© 2026 Marcenaria Pai &amp; Filho</span>
+    <ul class="footer__links">
+      <li><a href="index.html">home</a></li>
+      <li><a href="portfolio.html">portfólio</a></li>
+      <li><a href="contato.html">contato</a></li>
+      <li><a href="privacidade.html">privacidade</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script src="assets/js/menu-mobile.js" defer></script>
 <script type="module" src="assets/js/redefinir.js"></script>
 </body>
 </html>

@@ -1,6 +1,24 @@
 // Gerado automaticamente pelo cms.py — não edite à mão.
 window.PORTFOLIO = [
   {
+    "id": 9,
+    "titulo": "Projeto de teste",
+    "descricao": "um teste",
+    "cat": "quarto",
+    "catNome": "Quarto",
+    "imagem": null,
+    "destaque": true
+  },
+  {
+    "id": 1,
+    "titulo": "Cozinha Planejada",
+    "descricao": "Armários planejados com puxadores embutidos e bancada em quartzo.",
+    "cat": "cozinha",
+    "catNome": "Cozinha",
+    "imagem": null,
+    "destaque": true
+  },
+  {
     "id": 2,
     "titulo": "Apoio de TV",
     "descricao": "Painel ripado em madeira de demolição, com nicho para TV e som.",
@@ -16,7 +34,7 @@ window.PORTFOLIO = [
     "cat": "quarto",
     "catNome": "Quarto",
     "imagem": null,
-    "destaque": true
+    "destaque": false
   },
   {
     "id": 4,
@@ -24,15 +42,6 @@ window.PORTFOLIO = [
     "descricao": "Bancada de trabalho com gaveteiro lateral, pensada para home office.",
     "cat": "escritorio",
     "catNome": "Escritório",
-    "imagem": null,
-    "destaque": true
-  },
-  {
-    "id": 1,
-    "titulo": "Cozinha Planejada",
-    "descricao": "Armários planejados com puxadores embutidos e bancada em quartzo.",
-    "cat": "cozinha",
-    "catNome": "Cozinha",
     "imagem": null,
     "destaque": false
   },
