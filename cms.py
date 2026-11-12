@@ -41,6 +41,7 @@ Código por e-mail (Gmail) — configuração:
     3. Não envie esse arquivo pro GitHub — ele guarda a senha de app.
 """
 import hashlib
+import inspect
 import json
 import os
 import re
@@ -138,24 +139,96 @@ PROJETOS_EXEMPLO = [
 # =====================================================================
 # Visual — mesma paleta e mesmos elementos do site (site/assets/css/base.css)
 # =====================================================================
-PRETO_CAFE = "#1A130B"    # fundo geral
-NOGUEIRA = "#241A13"      # painéis, cards, header
-CASCA = "#3D2D21"
-OLIVA = "#4A5233"
-OLIVA_CLARO = "#6B7448"
-COBRE = "#B4713C"
-AREIA = "#E8DCC8"
-CREME = "#FFFCF6"
-TEXTO = "#EDE3D3"
-TEXTO_SUAVE = "#B9A991"
-ERRO = "#C97A63"
+# Duas paletas: "escuro" (a original) e "claro". A escolha fica salva em tema_cms.json.
+PALETAS = {
+    "escuro": {
+        "PRETO_CAFE": "#1A130B",    # fundo geral
+        "NOGUEIRA": "#241A13",      # painéis, cards, header
+        "CASCA": "#3D2D21",
+        "OLIVA": "#4A5233",
+        "OLIVA_CLARO": "#6B7448",
+        "COBRE": "#B4713C",
+        "AREIA": "#E8DCC8",         # texto forte e títulos
+        "CREME": "#FFFCF6",         # texto sobre oliva e sobre fotos (igual nos dois temas)
+        "TEXTO": "#EDE3D3",
+        "TEXTO_SUAVE": "#B9A991",
+        "ERRO": "#C97A63",
+        "ERRO_HOVER": "#D88C75",
+        "LINHA": "#3F352C",         # rgba(232,220,200,.14) sobre nogueira
+        "LINHA_PRETO": "#372F26",   # idem, sobre preto-café
+        "NAV_INATIVO": "#BFB4A2",
+        "LOGO_SUB": "#B2ADA6",
+        "LOGO_FG": "#FFFCF6",
+        "CARD_HOVER": "#2C2017",    # card em hover
+        "CARD_SEL": "#2B2F1F",      # card selecionado
+    },
+    "claro": {
+        "PRETO_CAFE": "#F3EBDD",
+        "NOGUEIRA": "#FFFCF6",
+        "CASCA": "#D8CCB6",
+        "OLIVA": "#4A5233",
+        "OLIVA_CLARO": "#5A6638",
+        "COBRE": "#9A5A28",
+        "AREIA": "#2B2118",
+        "CREME": "#FFFCF6",
+        "TEXTO": "#3A2D22",
+        "TEXTO_SUAVE": "#6B5A47",
+        "ERRO": "#B0432B",
+        "ERRO_HOVER": "#C4573C",
+        "LINHA": "#DDD1BB",
+        "LINHA_PRETO": "#D5C9B2",
+        "NAV_INATIVO": "#6B5A47",
+        "LOGO_SUB": "#7A6A57",
+        "LOGO_FG": "#2B2118",
+        "CARD_HOVER": "#F9F2E4",
+        "CARD_SEL": "#E6EBD3",
+    },
+}
+TEMA_CONFIG_PATH = BASE_DIR / "tema_cms.json"
+TEMA = "escuro"
+# Cores usadas como valor padrão de parâmetros (ex.: bg=PRETO_CAFE). O Python guarda o padrão
+# na hora em que a função é definida, então elas precisam ser trocadas à mão quando o tema muda.
+_CORES_EM_PADRAO = ("PRETO_CAFE", "NOGUEIRA", "LINHA")
 
-LINHA = "#3F352C"           # rgba(232,220,200,.14) sobre nogueira
-LINHA_PRETO = "#372F26"     # idem, sobre preto-café
-NAV_INATIVO = "#BFB4A2"
-LOGO_SUB = "#B2ADA6"
-CARD_HOVER = "#2C2017"      # card em hover
-CARD_SEL = "#2B2F1F"        # card selecionado (nogueira com um toque de oliva)
+
+def _definir_paleta(nome):
+    """Cria (ou atualiza) as constantes de cor do módulo: PRETO_CAFE, AREIA, ..."""
+    global TEMA
+    TEMA = nome
+    globals().update(PALETAS[nome])
+
+
+def _tema_salvo():
+    try:
+        nome = json.loads(TEMA_CONFIG_PATH.read_text(encoding="utf-8")).get("tema")
+    except (OSError, ValueError, AttributeError):
+        return "escuro"
+    return nome if nome in PALETAS else "escuro"
+
+
+def trocar_tema(nome):
+    """Troca a paleta em uso e guarda a escolha. Quem chama precisa redesenhar a tela."""
+    antiga, nova = PALETAS[TEMA], PALETAS[nome]
+    troca = {antiga[k]: nova[k] for k in _CORES_EM_PADRAO}
+
+    def ajustar(fn):
+        if inspect.isfunction(fn) and fn.__module__ == __name__ and fn.__defaults__:
+            fn.__defaults__ = tuple(troca.get(v, v) if isinstance(v, str) else v for v in fn.__defaults__)
+
+    for obj in list(globals().values()):
+        if inspect.isfunction(obj):
+            ajustar(obj)
+        elif inspect.isclass(obj) and obj.__module__ == __name__:
+            for atributo in vars(obj).values():
+                ajustar(atributo)
+    _definir_paleta(nome)
+    try:
+        TEMA_CONFIG_PATH.write_text(json.dumps({"tema": nome}), encoding="utf-8")
+    except OSError:
+        pass
+
+
+_definir_paleta(_tema_salvo())
 
 # degradê verde das "peças" sem foto (.peca no site)
 PECA_TOPO = (0x5C, 0x6B, 0x3E)
@@ -808,7 +881,7 @@ def eyebrow(parent, texto, bg):
 def logo(parent, bg, subtitulo="PAINEL"):
     """Logo do header (.nav__logo)."""
     f = tk.Frame(parent, bg=bg)
-    tk.Label(f, text="MARCENARIA PAI & FILHO", bg=bg, fg=CREME, font=fonte("titulo", 14, "bold")).pack(anchor="w")
+    tk.Label(f, text="MARCENARIA PAI & FILHO", bg=bg, fg=LOGO_FG, font=fonte("titulo", 14, "bold")).pack(anchor="w")
     tk.Label(f, text=espacar(subtitulo), bg=bg, fg=LOGO_SUB, font=fonte("corpo", 7)).pack(anchor="w", pady=(4, 0))
     return f
 
@@ -847,7 +920,7 @@ def cores_botao(estilo, bg):
         f, h = misturar(bg, AREIA, 0.07), misturar(bg, AREIA, 0.14)
         return f, f, AREIA, h, h
     if estilo == "danger":
-        return ERRO, ERRO, PRETO_CAFE, "#D88C75", "#D88C75"
+        return ERRO, ERRO, PRETO_CAFE, ERRO_HOVER, ERRO_HOVER
     if estilo == "danger_ghost":
         return bg, misturar(bg, ERRO, 0.50), ERRO, misturar(bg, ERRO, 0.12), ERRO
     if estilo == "aba":
@@ -1725,6 +1798,7 @@ class App:
     # ---------------- navegação ----------------
     def _limpar(self):
         self._area_rolavel = None
+        self._no_painel = False
         for w in self.container.winfo_children():
             w.destroy()
 
@@ -1802,6 +1876,7 @@ class App:
         coluna.grid(row=0, column=1, sticky="nsew")
         form = tk.Frame(coluna, bg=PRETO_CAFE)
         form.place(relx=0.5, rely=0.5, anchor="center")
+        self._botao_tema(coluna, PRETO_CAFE).place(relx=1.0, x=-28, y=24, anchor="ne")
 
         eyebrow(form, eyebrow_txt, PRETO_CAFE).pack(anchor="w")
         tk.Label(form, text=titulo_form, bg=PRETO_CAFE, fg=AREIA, font=fonte("titulo", 24, "bold")).pack(
@@ -2083,6 +2158,20 @@ class App:
         self._link(form, "Reenviar código", reenviar)
         self._link(form, "Voltar ao login", self._tela_login, pady=(8, 0))
 
+    def _botao_tema(self, pai, bg):
+        """Botão que alterna entre o modo escuro e o claro."""
+        texto = "Modo claro" if TEMA == "escuro" else "Modo escuro"
+        return Botao(pai, texto, self._alternar_tema, "ghost", bg=bg, pequeno=True)
+
+    def _alternar_tema(self):
+        trocar_tema("claro" if TEMA == "escuro" else "escuro")
+        aplicar_tema(self.root)
+        self.container.configure(bg=PRETO_CAFE)
+        if getattr(self, "_no_painel", False):
+            self._tela_painel(self.pagina)
+        else:
+            self._iniciar()       # telas de entrada: volta para a tela certa (cadastro ou login)
+
     def _sair(self):
         self._tela_login()
 
@@ -2096,6 +2185,7 @@ class App:
     # ---------------- painel principal ----------------
     def _tela_painel(self, pagina="portfolio"):
         self._limpar()
+        self._no_painel = True
         self.tela = tk.Frame(self.container, bg=PRETO_CAFE)
         self.tela.pack(fill="both", expand=True)
 
@@ -2155,6 +2245,7 @@ class App:
         logo(nav, NOGUEIRA).pack(side="left")
 
         Botao(nav, "Sair", self._sair, "ghost", bg=NOGUEIRA, pequeno=True).pack(side="right", padx=(12, 0))
+        self._botao_tema(nav, NOGUEIRA).pack(side="right", padx=(12, 0))
         ChipUsuario(nav, self.cadastro["nome"], self._abrir_conta).pack(side="right")
 
         self.lbl_sync = tk.Label(nav, text="", bg=NOGUEIRA, fg=TEXTO_SUAVE, font=fonte("corpo", 9))

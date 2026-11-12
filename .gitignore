@@ -3,3 +3,4 @@ cms.db
 historico_imagens/
 email_config.json
 .env
+tema_cms.json

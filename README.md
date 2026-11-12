@@ -10,6 +10,8 @@ pip install -r requirements.txt
 python cms.py
 ```
 
+- **Tema:** o botão “Modo claro” / “Modo escuro” alterna a aparência do painel
+  e salva a escolha neste computador.
 - **Primeira vez:** o painel pede o cadastro (nome, e-mail e senha de pelo
   menos 8 caracteres). Depois disso você **entra com o e-mail e a senha**.
   O botão **Sair** fica no topo; clicando no seu nome você muda o nome ou
@@ -60,6 +62,9 @@ seja digitado em "Esqueci minha senha".
 Em todas as páginas o topo mostra "Entrar" ou o menu da conta (Meu
 perfil / Sair), e **clicar na logo leva para a Home**. Depois de entrar,
 a pessoa cai direto na tela de orçamento.
+
+O botão de tema no menu alterna entre os modos claro e escuro em todas as
+páginas do site; a escolha fica salva neste aparelho.
 
 **Carregamento rápido:** o site guarda neste aparelho só o nome, e-mail e
 foto do último usuário para desenhar a tela na hora, e o Supabase confirma

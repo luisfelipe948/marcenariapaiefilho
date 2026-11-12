@@ -1,0 +1,137 @@
+/* ===================================================================
+   TEMA.CSS — modo escuro (padrão) e modo claro
+
+   Carregue DEPOIS de todos os outros CSS. O modo é definido pelo atributo
+   data-tema no <html> ("escuro" ou "claro"), que o js/tema.js controla.
+
+   Como funciona:
+   - o modo claro só troca as variáveis de cor do base.css;
+   - --tinta é a cor (R, G, B) usada nas bordas e fundos translúcidos que
+     antes eram "areia" fixa (rgba(232,220,200,x)): no escuro é areia, no
+     claro é marrom-escuro;
+   - o topo da Home (foto + degradê escuro) continua escuro nos dois
+     modos, por isso ele recebe as variáveis escuras de volta.
+   =================================================================== */
+
+:root {
+  color-scheme: dark;
+  --tinta: 232, 220, 200;
+}
+
+:root[data-tema="claro"] {
+  color-scheme: light;
+  --preto-cafe: #F3EBDD;   /* fundo geral */
+  --nogueira: #FFFCF6;     /* painéis, cards, header */
+  --casca: #D8CCB6;
+  --oliva-claro: #5A6638;
+  --cobre: #9A5A28;
+  --areia: #2B2118;        /* títulos e texto forte */
+  --texto: #3A2D22;
+  --texto-suave: #6B5A47;
+  --linha: rgba(60, 40, 20, 0.16);
+  --erro: #B0432B;
+  --tinta: 43, 33, 24;
+  --logo-cor: #2B2118;
+}
+
+/* topo da Home: foto com degradê escuro, então mantém as cores do modo escuro */
+:root[data-tema="claro"] .header {
+  --preto-cafe: #1A130B;
+  --nogueira: #241A13;
+  --casca: #3D2D21;
+  --oliva-claro: #6B7448;
+  --cobre: #B4713C;
+  --areia: #E8DCC8;
+  --texto: #EDE3D3;
+  --texto-suave: #B9A991;
+  --linha: rgba(232, 220, 200, 0.14);
+  --erro: #C97A63;
+  --tinta: 232, 220, 200;
+  --logo-cor: #FFFCF6;
+  color: var(--texto);
+}
+
+body { transition: background-color 0.25s ease, color 0.25s ease; }
+
+/* ---------- logo (era sempre creme) ---------- */
+.nav__logo,
+a.nav__logo { color: var(--logo-cor, var(--creme)); }
+
+/* ---------- bordas e fundos que eram areia fixa ---------- */
+.btn--ghost { border-color: rgba(var(--tinta), 0.45); }
+.btn--ghost:hover { background: rgba(var(--tinta), 0.1); }
+.nav__toggle { border-color: rgba(var(--tinta), 0.3); }
+.conta__entrar { border-color: rgba(var(--tinta), 0.45); }
+.conta__entrar:hover { background: rgba(var(--tinta), 0.1); }
+.conta__btn { border-color: rgba(var(--tinta), 0.3); }
+.conta__btn:hover { background: rgba(var(--tinta), 0.08); }
+.conta__menu a:hover,
+.conta__sair:hover { background: rgba(var(--tinta), 0.09); }
+.btn-social { border-color: rgba(var(--tinta), 0.3); }
+.btn-social:hover { background: rgba(var(--tinta), 0.08); }
+.perfil-lateral__avatar,
+.perfil-lateral__prov { border-color: rgba(var(--tinta), 0.3); }
+.lateral__lista .num { border-color: rgba(var(--tinta), 0.4); }
+.ver-senha:hover { background: rgba(var(--tinta), 0.09); }
+
+@media (max-width: 700px) {
+  .nav__links a:hover { background: rgba(var(--tinta), 0.09); }
+  .nav__links a.ativo { background: rgba(var(--tinta), 0.07); }
+}
+
+/* ---------- só no modo claro ---------- */
+:root[data-tema="claro"] .footer { border-top: 1px solid var(--linha); }
+
+/* título do modal do portfólio fica sobre a foto/degradê verde: segue claro */
+:root[data-tema="claro"] .modal__topo-conteudo h3 { color: #FFFCF6; }
+
+/* a ilustração do guarda-roupa é clara (feita para fundo escuro): inverte no modo claro */
+:root[data-tema="claro"] .showcase__guarda-roupa img {
+  filter: invert(1) sepia(0.5) brightness(0.55);
+}
+
+/* ---------- botão de alternar o tema (criado pelo js/tema.js) ---------- */
+.tema-li { list-style: none; display: flex; align-items: center; }
+.tema-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1.5px solid rgba(var(--tinta), 0.3);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--areia);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.tema-btn:hover { background: rgba(var(--tinta), 0.1); border-color: var(--areia); }
+.tema-btn svg { width: 20px; height: 20px; flex: none; }
+.tema-btn .i-lua { display: none; }
+:root[data-tema="claro"] .tema-btn .i-sol { display: none; }
+:root[data-tema="claro"] .tema-btn .i-lua { display: block; }
+.tema-btn__rotulo { display: none; }
+
+/* no celular o botão vira uma linha do menu */
+@media (max-width: 700px) {
+  .tema-li { display: block; }
+  .tema-btn {
+    width: 100%;
+    height: auto;
+    padding: 0.85rem 1rem;
+    border: 0;
+    border-radius: 5px;
+    justify-content: flex-start;
+    font-size: 1.05rem;
+  }
+  .tema-btn:hover { background: rgba(var(--tinta), 0.09); }
+  .tema-btn__rotulo { display: inline; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body { transition: none; }
+}
